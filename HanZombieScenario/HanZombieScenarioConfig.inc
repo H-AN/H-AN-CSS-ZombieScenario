@@ -83,7 +83,7 @@ void PrecacheBackgroundMusic()
     }
 
     PrecacheSound(musicPath, true);
-    PrintToServer("[预缓存] 背景音乐: %s", musicPath); // Debug 用
+    //PrintToServer("[预缓存] 背景音乐: %s", musicPath); // Debug 用
 }
 
 
