@@ -532,7 +532,7 @@ CheckHumansWin()
 {
     if(!GameStart)
         return;
-
+    
     g_ZombiesKilled++;
     if(g_ZombiesKilled >= g_Stages[g_CurrentStage].killRequired)
     {
@@ -541,15 +541,75 @@ CheckHumansWin()
         KillAllZombie();
         PlayRoundVox(g_VoxSystemConfig.HumanWinsVox);
         PlayRoundVox(g_VoxSystemConfig.WinsBgmVox);
-        TerminateRound(5.0, CSRoundEnd_CTWin);
-    }  
+        if(g_ScenarioConfig.WinEndRound)
+        {
+            TerminateRound(5.0, CSRoundEnd_CTWin);
+        }
+        else
+        {
+            DontEndRound(3.0);
+        }
+        
+    } 
     if (g_CurrentStage + 1 > g_StageCount)
     {
         g_StageCount = 0;
         GotoNextMap();
         CreateTimer(1.0, Timer_ForceMapEnd, _, TIMER_FLAG_NO_MAPCHANGE);
-    } 
+    }
 }
+
+void DontEndRound(float Time)
+{
+    if(!g_ScenarioConfig.WinEndRound)
+    {
+        GameStart = false;
+        CreateTimer(Time, CreateFakeNewRound, TIMER_FLAG_NO_MAPCHANGE);
+    }
+}
+
+public Action CreateFakeNewRound(Handle timer)
+{
+    if(g_ScenarioConfig.WinEndRound)
+        return Plugin_Stop;
+
+    IsCountDown = false;
+
+    CleanupInvalidZombies();
+    g_ZombiesKilled = 0;
+    float SpawnTime = g_ScenarioConfig.ZombieSpawnTime;
+    if (IsValidHandle(FreezeEndCreateZ))
+    {
+        CloseHandle(FreezeEndCreateZ);
+        FreezeEndCreateZ = INVALID_HANDLE;
+    }
+    FreezeEndCreateZ = CreateTimer(SpawnTime, Timer_ToCreateZombie, _, TIMER_FLAG_NO_MAPCHANGE);
+    if (SpawnTime >= 20.0)
+    {
+        float playTime = SpawnTime - 20.0;
+
+        if (IsValidHandle(FreezeEndTwentysVox))
+        {
+            CloseHandle(FreezeEndTwentysVox);
+            FreezeEndTwentysVox = INVALID_HANDLE;
+        }
+        FreezeEndTwentysVox = CreateTimer(playTime, Timer_ToPlayTwentysVox, _, TIMER_FLAG_NO_MAPCHANGE);
+    }
+
+    PlayRoundVox(g_VoxSystemConfig.RoundStartVox);
+    
+    if(!IsCountDown)
+    {
+        StartCountDownVox(RoundFloat(SpawnTime));
+        IsCountDown = true;
+    }
+
+    return Plugin_Continue;
+
+}
+
+
+
 
 public Action Timer_ForceMapEnd(Handle timer)
 {

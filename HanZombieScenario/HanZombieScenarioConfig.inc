@@ -28,6 +28,7 @@ void LoadScenarioConfig()
     g_ScenarioConfig.killmoney = KvGetNum(kv, "Kill_Money", 300);
     g_ScenarioConfig.Maxmoney = KvGetNum(kv, "Max_Money", 16000);
     g_ScenarioConfig.ShowPrintDamage = KvGetNum(kv, "Show_Print_Damage", 1) != 0;
+    g_ScenarioConfig.WinEndRound = KvGetNum(kv, "Win_End_Round", 1) != 0;
     
     char light[4];
     KvGetString(kv, "lightstyle", light, sizeof(light));
@@ -83,7 +84,7 @@ void PrecacheBackgroundMusic()
     }
 
     PrecacheSound(musicPath, true);
-    //PrintToServer("[预缓存] 背景音乐: %s", musicPath); // Debug 用
+    PrintToServer("[预缓存] 背景音乐: %s", musicPath); // Debug 用
 }
 
 
@@ -107,6 +108,7 @@ void WriteDefaultScenarioConfig(const char[] path)
     WriteFileLine(file, "// Kill_Money 击杀给多少金钱");
     WriteFileLine(file, "// Max_Money 最大能获取的金钱,一次击杀最大金钱");
     WriteFileLine(file, "// Show_Print_Damage 开启显示自己造成的伤害");
+    WriteFileLine(file, "// Win_End_Round 开启后每次胜利会结束回合重新开始,设为0回合不会结束");
     WriteFileLine(file, "\"ScenarioConfig\"");
     WriteFileLine(file, "{");
     WriteFileLine(file, "    \"enable_plugins\"    \"1\"");
@@ -121,6 +123,7 @@ void WriteDefaultScenarioConfig(const char[] path)
     WriteFileLine(file, "    \"Kill_Money\"    \"300\"");
     WriteFileLine(file, "    \"Max_Money\"    \"16000\"");
     WriteFileLine(file, "    \"Show_Print_Damage\"    \"1\"");
+    WriteFileLine(file, "    \"Win_End_Round\"    \"1\"");
     WriteFileLine(file, "}");
 
     CloseHandle(file);

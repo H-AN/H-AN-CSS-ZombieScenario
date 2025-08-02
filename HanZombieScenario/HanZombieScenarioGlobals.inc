@@ -1,4 +1,4 @@
-#define VERSION "2.0"
+#define VERSION "2.0.1"
 #define MAXSPAWNS 256
 bool g_bZombieConfigReady = false;
 int offsCollision; 
@@ -80,6 +80,7 @@ enum struct ScenarioConfig
     int killmoney;
     int Maxmoney;
     bool ShowPrintDamage;
+    bool WinEndRound;
 }
 
 ScenarioConfig g_ScenarioConfig;
