@@ -1,7 +1,5 @@
 
 #define HAN_ZOMBIE_SCENARIO_API_INC
-
-
 /**
  * 设置丧尸播放自定义动画（带持续时间控制）
  * @param zombie    丧尸实体索引
@@ -72,3 +70,39 @@ forward void Han_OnZombieAttack(int zombie, int victim);
  * @return         是否成功造成伤害
  */
 native bool Han_SafeDamageZombie(int attacker, int zombie, int damage);
+
+/**
+ * 
+ * @param zombie  目标丧尸实体 锁定会因为 丧尸死亡 或者锁定目标死亡 而解除锁定
+ * @param target  玩家客户端索引 
+ * @param locktime    锁定时长 -1.0 和 0.0 代表永久锁定 填写1.0将锁定 目标1.0秒
+ * @return         是否成功
+ */
+native bool Han_SetZombieTarget(int zombie, int target, float locktime);
+/**
+ * 
+ * @param zombie  目标丧尸实体 解除锁定目标状态
+ * @return         是否成功
+ */
+native bool Han_UnlockZombie(int zombie);
+
+/**
+ * 游戏开始事件（关卡加载完毕，倒计时结束，第一次生成丧尸 游戏正式开始 ）
+ */
+forward void Han_OnGameStart();
+
+/**
+ * 游戏结束事件（丧尸被清除,游戏结束 Gamestart = false）
+ */
+forward void Han_OnGameEnd();
+
+/**
+ * 玩家胜利事件（人类通关胜利事件）
+ */
+forward void Han_OnHumanWin();
+
+/**
+ * 玩家失败事件（僵尸获得胜利事件）
+ */
+forward void Han_OnZombieWin();
+
