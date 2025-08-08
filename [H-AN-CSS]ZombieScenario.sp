@@ -73,6 +73,7 @@ public void OnMapStart()
     if (!GetConVarBool(g_ScenarioConfig.enableplugins))
     {
         ServerCommand("mp_ignore_round_win_conditions 0");
+		return;
     }
 
     LoadScenarioConfig();
@@ -1462,6 +1463,7 @@ public int Native_HanUnlockZombie(Handle plugin, int numParams)
 
     return 1;
 }
+
 
 
 
