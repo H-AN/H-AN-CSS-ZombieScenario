@@ -1275,7 +1275,7 @@ public OnClientPutInServer(client)
 {
     HookSdkEvents(client);
     ReSpawn[client] = INVALID_HANDLE;
-    iAccount[client] = g_ScenarioConfig.Maxmoney; //进入服务器设置金钱为最大金钱
+    iAccount[client] = GetConVarInt(g_ScenarioConfig.Maxmoney); //进入服务器设置金钱为最大金钱
 }
 
 public void OnClientDisconnect(int client)
