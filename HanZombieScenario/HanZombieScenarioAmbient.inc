@@ -1,9 +1,23 @@
-
+/*
 void ChangeMapLightAndSkyBox()
 {
     SetLightStyle(0, g_ScenarioConfig.lightStyle);
     SetConVarString(FindConVar("sv_skyname"), g_ScenarioConfig.skybox, true);
 }
+*/
+
+void ChangeMapLightAndSkyBox()
+{
+    char lightStyle[8];
+    GetConVarString(g_ScenarioConfig.lightStyle, lightStyle, sizeof(lightStyle));
+    SetLightStyle(0, lightStyle);
+
+    char skybox[64];
+    GetConVarString(g_ScenarioConfig.skybox, skybox, sizeof(skybox));
+    Handle sv_skyname = FindConVar("sv_skyname");
+    SetConVarString(sv_skyname, skybox, true);
+}
+
 
 public Action AmbienceLoop(Handle timer)
 {
@@ -13,6 +27,69 @@ public Action AmbienceLoop(Handle timer)
     return Plugin_Continue; 
 }
 
+public Action playsound(Handle timer)
+{
+    char fullStr[PLATFORM_MAX_PATH];
+    GetConVarString(g_ScenarioConfig.backgroundMusic, fullStr, sizeof(fullStr));
+    if (fullStr[0] == '\0')
+        return Plugin_Stop;
+
+    char soundPath[PLATFORM_MAX_PATH];
+    float duration = 60.0;
+
+    int sep = FindCharInString(fullStr, ':');
+    if (sep != -1)
+    {
+        strcopy(soundPath, sizeof(soundPath), fullStr);
+        soundPath[sep] = '\0';
+
+        char timePart[16];
+        strcopy(timePart, sizeof(timePart), fullStr[sep + 1]);
+        duration = StringToFloat(timePart);
+    }
+    else
+    {
+        strcopy(soundPath, sizeof(soundPath), fullStr);
+    }
+
+    EmitSoundToAll(soundPath, SOUND_FROM_WORLD, SNDCHAN_AUTO, SNDLEVEL_NORMAL, SND_NOFLAGS, 1.0, SNDPITCH_NORMAL, -1, NULL_VECTOR, NULL_VECTOR, true, 0.0);
+
+    tAmbience = CreateTimer(duration, AmbienceLoop, _, TIMER_FLAG_NO_MAPCHANGE);
+    return Plugin_Continue;
+}
+
+void StopAmbience()
+{
+    char fullStr[PLATFORM_MAX_PATH];
+    GetConVarString(g_ScenarioConfig.backgroundMusic, fullStr, sizeof(fullStr));
+    if (fullStr[0] == '\0')
+        return;
+
+    char soundPath[PLATFORM_MAX_PATH];
+    int sep = FindCharInString(fullStr, ':');
+    if (sep != -1)
+    {
+        strcopy(soundPath, sizeof(soundPath), fullStr);
+        soundPath[sep] = '\0';
+    }
+    else
+    {
+        strcopy(soundPath, sizeof(soundPath), fullStr);
+    }
+
+    for (int x = 1; x <= MaxClients; x++)
+    {
+        if (!IsClientInGame(x) || IsFakeClient(x))
+        {
+            continue;
+        }
+
+        StopSound(x, SNDCHAN_AUTO, soundPath);
+    }
+}
+
+
+/*
 public Action playsound(Handle timer)
 {
     if (g_ScenarioConfig.backgroundMusic[0] == '\0')
@@ -82,3 +159,4 @@ StopAmbience()
         StopSound(x, SNDCHAN_AUTO, soundPath);
     }
 }
+*/

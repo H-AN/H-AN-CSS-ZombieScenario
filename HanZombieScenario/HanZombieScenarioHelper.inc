@@ -4,7 +4,6 @@
 RemoveObjectives()
 {
     char classname[64];
-    
     int maxentities = GetMaxEntities();
     for (int x = 0; x <= maxentities; x++)
     {
@@ -47,6 +46,7 @@ void ClearPlayerReSpawnTimer()
 // ============================================================================
 // >> 服务器指令
 // ============================================================================
+
 void UpdateCavr()
 {
     ServerCommand("mp_timelimit 0");
@@ -269,7 +269,7 @@ void ZombieDeathSolid(int zombie)
     
     //SetEntProp(zombie, Prop_Data, "m_takedamage", 0, 1);
 
-    if(GetEntPropFloat(zombie, Prop_Send, "m_flModelScale") > 1.0)
+    if(GetEntPropFloat(zombie, Prop_Send, "m_flModelScale") != 1.0)
         return;
 
     SetEntProp(zombie, Prop_Send, "m_usSolidFlags", 1);
@@ -280,12 +280,16 @@ void ZombieDeathSolid(int zombie)
 // ============================================================================
 // >> 创建fake击杀事件
 // ============================================================================
+
 stock CreateFakeKil(int attacker)
 {
     if(!IsValidClient(attacker))
-     return;
+        return;
 
-    new Handle:event = CreateEvent("player_death");
+    if(!GetConVarBool(g_ScenarioConfig.EnableKillIcon))
+        return;
+
+    Handle event = CreateEvent("player_death");
     if (event != INVALID_HANDLE)
     {
         char ClassName[30];
@@ -298,6 +302,7 @@ stock CreateFakeKil(int attacker)
         FireEvent(event, false);
     } 
 }
+
 // ============================================================================
 // >> 清除状态
 // ============================================================================
@@ -313,6 +318,9 @@ void ClearZombieZombieState(int zombie)
 
     g_ZombieState[zombie].IsCustomAnim = false;
     g_ZombieState[zombie].CustomAnimEndTime = 0.0;
+
+    g_fTargetLockExpire[zombie] = 0.0; // 解锁
+    g_iForcedTarget[zombie] = 0;
 }
 
 // ============================================================================
@@ -387,7 +395,7 @@ stock AssignTeamClient(client, bool spawn)
     {
         return;
     }
-    
+  
     int clients[1];
     clients[0] = client;
     
@@ -428,7 +436,7 @@ void CreateAdmianCommand()
 
 public Action Command_RestGame(client, argc)
 {
-    if (!Isenable)
+    if (!GetConVarBool(g_ScenarioConfig.enableplugins))
     {
         return Plugin_Handled;
     }
@@ -439,6 +447,8 @@ public Action Command_RestGame(client, argc)
     {
         return Plugin_Handled;
     }
+
+    KillAllZombie();
     
     TerminateRound(3.0, CSRoundEnd_Draw);
     
@@ -447,7 +457,7 @@ public Action Command_RestGame(client, argc)
 
 public Action Command_SetDay(client, argc)
 {
-    if (argc < 1 || !Isenable)
+    if (argc < 1 || !GetConVarBool(g_ScenarioConfig.enableplugins))
     {
         return Plugin_Handled;
     }
@@ -467,6 +477,8 @@ public Action Command_SetDay(client, argc)
     {
         return Plugin_Handled;
     }
+
+    KillAllZombie();
     
     TerminateRound(3.0, CSRoundEnd_Draw);
     
@@ -493,5 +505,44 @@ void SyncClientMoney(int client)
 
     iAccount[client] = GetClientMoney(client);
 }
+// ============================================================================
+// >> 回合事件API
+// ============================================================================
+void IsGameStart()
+{
+    if (g_ForwardGameStart != INVALID_HANDLE)
+    {
+        Call_StartForward(g_ForwardGameStart);
+        Call_Finish();
+    }
+}
+
+void IsGameEnd()
+{
+    if (g_ForwardGameEnd != INVALID_HANDLE)
+    {
+        Call_StartForward(g_ForwardGameEnd);
+        Call_Finish();
+    }
+}
+
+void IsHumanWin()
+{
+    if (g_ForwardHumanWin != INVALID_HANDLE)
+    {
+        Call_StartForward(g_ForwardHumanWin);
+        Call_Finish();
+    }
+}
+
+void IsZombieWin()
+{
+    if (g_ForwardZombieWin != INVALID_HANDLE)
+    {
+        Call_StartForward(g_ForwardZombieWin);
+        Call_Finish();
+    }
+}
+
 
 

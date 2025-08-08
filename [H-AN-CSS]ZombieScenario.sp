@@ -6,6 +6,7 @@
 #include <HanZombieScenarioAPI>
 
 #include "HanZombieScenario/HanZombieScenarioGlobals"
+#include "HanZombieScenario/HanZombieScenarioCvars"
 #include "HanZombieScenario/HanZombieScenarioHelper"
 #include "HanZombieScenario/HanZombieScenarioStageData"
 #include "HanZombieScenario/HanZombieScenarioEvents"
@@ -14,6 +15,7 @@
 #include "HanZombieScenario/HanZombieScenarioAmbient"
 #include "HanZombieScenario/HanZombieScenarioVoxSystem"
 #include "HanZombieScenario/HanZombieScenarioGrenadeSystem"
+
 
 public Plugin:myinfo =
 {
@@ -38,6 +40,15 @@ public APLRes:AskPluginLoad2(Handle:myself, bool:late, String:error[], err_max)
     g_ForwardZombieDeath = new GlobalForward("Han_OnZombieDeath", ET_Ignore, Param_Cell, Param_Cell);
     g_ForwardZombieHurt = new GlobalForward("Han_OnZombieHurt", ET_Ignore, Param_Cell, Param_Cell);
     g_ForwardZombieAttack = new GlobalForward("Han_OnZombieAttack", ET_Ignore, Param_Cell, Param_Cell);
+
+    g_ForwardGameStart = new GlobalForward("Han_OnGameStart", ET_Ignore);
+    g_ForwardGameEnd = new GlobalForward("Han_OnGameEnd", ET_Ignore);
+    g_ForwardHumanWin = new GlobalForward("Han_OnHumanWin", ET_Ignore);
+    g_ForwardZombieWin = new GlobalForward("Han_OnZombieWin", ET_Ignore);
+
+    CreateNative("Han_SetZombieTarget", Native_HanSetZombieTarget);
+    CreateNative("Han_UnlockZombie", Native_HanUnlockZombie)
+
     
     
     return APLRes_Success;
@@ -46,36 +57,28 @@ public APLRes:AskPluginLoad2(Handle:myself, bool:late, String:error[], err_max)
 
 public void OnPluginStart()
 {
-    LoadScenarioConfig();
-    Isenable = g_ScenarioConfig.enableplugins;
-    if(!Isenable)
-    {
-       return;
-    }
-
     HookEvents();
     HookUserMgs();
-    offsCollision = FindSendPropInfo("CBaseEntity", "m_CollisionGroup");
-	gLeaderOffset = FindSendPropInfo("CHostage", "m_leader");
-
+    InitScenarioCvars();
     AddCommandListener(Cmd_BlockAddBot, "bot_add");
     AddCommandListener(Cmd_BlockAddBot, "bot_add_ct");
     AddCommandListener(Cmd_BlockAddBot, "bot_add_t");
-
-    CreateAdmianCommand();   
+    CreateAdmianCommand();
+    LoadScenarioConfig();   
     
 }
 
-
 public void OnMapStart()
 {
-    UpdateCavr();
-    LoadScenarioConfig();
-    Isenable = g_ScenarioConfig.enableplugins;
-    if(!Isenable)
+    if (!GetConVarBool(g_ScenarioConfig.enableplugins))
     {
-       return;
+        ServerCommand("mp_ignore_round_win_conditions 0");
     }
+
+    LoadScenarioConfig();
+
+    UpdateCavr();
+
     MapChangeCleanup();
 
     InitZombieConfig();
@@ -101,23 +104,15 @@ public void OnMapStart()
 
 public OnPluginEnd()
 {
-    UnHookEvents();
-    ClearPlayerReSpawnTimer();
+    ScenarioEnd();
 }
 
 public void OnMapEnd()
 {
-    LoadScenarioConfig();
-    Isenable = g_ScenarioConfig.enableplugins;
-    if(!Isenable)
-    {
-        CreateTimer(0.0, unloadPlugins, TIMER_FLAG_NO_MAPCHANGE);
-    }
-    else
-    {
-        CreateTimer(0.0, loadPlugins, TIMER_FLAG_NO_MAPCHANGE);
-    }
+    KillAllZombie();
 }
+
+
 
 /*重要: CS起源 引擎BUG, 当npc已经生成后,BOT的复活 会导致服务器崩溃 以此方式在游戏开始NPC召唤后禁止添加BOT,回合开始未创建NPC的时候 可以加BOT*/
 public Action Cmd_BlockAddBot(int client, const char[] cmd, int argc) 
@@ -131,33 +126,6 @@ public Action Cmd_BlockAddBot(int client, const char[] cmd, int argc)
     return Plugin_Continue;
 }
 
-
-/*第一次为适应单机环境制作,使用此方法 在地图结束时根据配置卸载或者加载自身插件,以适用插件开关 Isenable = g_ScenarioConfig.enableplugins; */
-
-void GetPluginsNames(char[] buffer, int maxlen)
-{
-    GetPluginFilename(INVALID_HANDLE, buffer, maxlen);
-}
-
-
-public Action unloadPlugins(Handle iTimer)
-{
-    char name[256];
-    GetPluginsNames(name, sizeof(name));
-    ServerCommand("sm plugins unload %s", name); 
-    ServerCommand("mp_ignore_round_win_conditions 0");
-    return Plugin_Stop;
-}
-
-
-public Action loadPlugins(Handle iTimer)
-{
-    char name[256];
-    GetPluginsNames(name, sizeof(name));
-    ServerCommand("sm plugins load %s", name); 
-    ServerCommand("mp_ignore_round_win_conditions 1");
-    return Plugin_Stop;
-}
 
 
 // ============================================================================
@@ -294,6 +262,30 @@ void LoadZombieConfig()
     {
         PrintToServer("[ZombieSystem] 配置文件加载失败: %s", path);
         return;
+    }
+
+    char mapname[64];
+    GetCurrentMap(mapname, sizeof(mapname));
+
+    char mapConfigPath[PLATFORM_MAX_PATH];
+    BuildPath(Path_SM, mapConfigPath, sizeof(mapConfigPath), "configs/HanZombieScenario/%s/HanZombieScenarioZombieData.cfg", mapname);
+    if (FileExists(mapConfigPath))
+    {
+        // 若存在地图专属配置，优先读取
+        KeyValues kvMap = new KeyValues("zombies");
+
+        if (FileToKeyValues(kvMap, mapConfigPath))
+        {
+            delete kv; // 删除默认配置
+            kv = kvMap;
+
+            PrintToServer("[ZombieScenario] 载入地图专属丧尸配置：%s", mapConfigPath);
+        }
+        else
+        {
+            delete kvMap;
+            PrintToServer("[ZombieScenario] 地图专属丧尸配置读取失败，使用默认配置。");
+        }
     }
 
     if (!KvGotoFirstSubKey(kv))
@@ -496,6 +488,8 @@ public Action ZombieDamageHook(int zombie, int &attacker, int &inflictor, float 
         SetEntityMoveType(zombie, MOVETYPE_VPHYSICS);
         GiveKillMoneyAndScore(attacker);
         CreateFakeKil(attacker);
+
+        //fakeRoll(zombie);
         
         ClearZombieZombieState(zombie);
 
@@ -525,6 +519,23 @@ public Action ZombieDamageHook(int zombie, int &attacker, int &inflictor, float 
     return Plugin_Handled;
 }
 
+/* 测试功能 死亡后 隐藏动画 显示真实实体 交换双方模型, 应用于 有布娃娃的模型
+void fakeRoll(int zombie)
+{
+
+    char tmp[32];
+    GetEntPropString(zombie, Prop_Data, "m_iName", tmp, sizeof(tmp));
+    int zombie_ent = EntRefToEntIndex(StringToInt(tmp));
+
+    char AnimeMdl[128];
+    GetEntPropString(zombie_ent, Prop_Data, "m_ModelName", AnimeMdl, sizeof(AnimeMdl));
+
+    SetEntityModel(zombie, AnimeMdl);
+
+    SetEntityModel(zombie_ent, "models/blackout.mdl");
+}
+*/
+
 public Action Timer_ResetBeingAttacked(Handle timer, int ref)
 {
     int zombie = EntRefToEntIndex(ref);
@@ -544,12 +555,15 @@ void GiveKillMoneyAndScore(int attacker)
     
     SetEntProp(attacker, Prop_Data, "m_iFrags", GetClientFrags(attacker) + 1);
 
-    if (iAccount[attacker] < g_ScenarioConfig.Maxmoney && g_ScenarioConfig.killmoney > 0) //使用iAccount数组记录真实金钱
+    int Kmoney = GetConVarInt(g_ScenarioConfig.killmoney);
+    int Mmoney = GetConVarInt(g_ScenarioConfig.Maxmoney);
+
+    if (iAccount[attacker] < Mmoney && Kmoney > 0) //使用iAccount数组记录真实金钱
     {
-        iAccount[attacker]+= g_ScenarioConfig.killmoney;
-        if(iAccount[attacker] > g_ScenarioConfig.Maxmoney)
+        iAccount[attacker]+= Kmoney;
+        if(iAccount[attacker] > Mmoney)
         {
-            iAccount[attacker] = g_ScenarioConfig.Maxmoney;
+            iAccount[attacker] = Mmoney;
         }
         SetEntProp(attacker, Prop_Send, "m_iAccount", iAccount[attacker]);
     }
@@ -678,7 +692,7 @@ public void ZombieThink(int zombie)
         char hitsound[64];
         GetRandomSound(z.hitsound, hitsound, sizeof(hitsound));
         EmitSoundToAll(hitsound, 0, SNDCHAN_AUTO, SNDLEVEL_NORMAL, SND_NOFLAGS, 0.5, SNDPITCH_NORMAL, -1, pos);
-        SDKHooks_TakeDamage(target, zombie, zombie, damage, DMG_SLASH);
+        SDKHooks_TakeDamage(target, zombie, zombie, damage, DMG_SLASH, _, _, _, false); // bypassHooks false 禁止hook绕过伤害
         
 
         return;
@@ -956,7 +970,7 @@ bool Han_HurtZombie(zombie, attacker, damage = 0)
     g_fLastAttackTime[attacker] = GetGameTime();
     UpdateHUDClient(attacker);
     
-    if(g_ScenarioConfig.ShowPrintDamage)
+    if(GetConVarBool(g_ScenarioConfig.ShowPrintDamage))
     {
         PrintCenterText(attacker, "造成 %i 伤害", damage);
     }
@@ -1053,42 +1067,68 @@ stock Han_ZombieDeath(zombie)
 
 }
 
-//寻找最近目标
-stock Han_Think(zombie, &target, float height = 55.0)
+
+stock void Han_Think(int zombie, int &target, float height = 55.0)
 {
-	
-	float entityposition[3], ClientPosition[3], dist;
-	GetEntPropVector(zombie, Prop_Send, "m_vecOrigin", entityposition);
+    if (!Han_ZombieIsAlive(zombie))
+    {
+        SetEntDataEnt2(zombie, gLeaderOffset, zombie);
+        g_fTargetLockExpire[zombie] = 0.0;
+        g_iForcedTarget[zombie] = 0;
+        target = zombie;
+        return;
+    }
 
-	for(int i = 1; i <= MaxClients; i++)
-	{
-		if(IsClientConnected(i) && IsClientInGame(i) && IsPlayerAlive(i))
-		{
-			GetClientEyePosition(i, ClientPosition);
-			float distance = GetVectorDistance(entityposition, ClientPosition, false);
-			if(Han_ZombieCanSee(zombie, i, height))
-			{
-				if(dist == 0.0 || dist > distance)
-				{
-					
-					if(GetEntProp(zombie, Prop_Data, "m_iHealth") > 0)
-					{
-						SetEntDataEnt2(zombie, gLeaderOffset, i);  //见到目标跟随
-						target = i;
-						dist = distance;
-					}					
-					else					
-					{
-						SetEntDataEnt2(zombie, gLeaderOffset, zombie);  //死亡后目标设置为自己
-						target = zombie;
-						dist = distance;
+    float gameTime = GetGameTime();
 
-					}
-				}
-			}
-		}
-	}
+    // 如果被锁定
+    if (g_fTargetLockExpire[zombie] < 0.0 || g_fTargetLockExpire[zombie] > gameTime)
+    {
+        int locked = g_iForcedTarget[zombie];
+        if (IsValidClient(locked) && IsPlayerAlive(locked))
+        {
+            SetEntDataEnt2(zombie, gLeaderOffset, locked);
+            target = locked;
+            return;
+        }
+        else
+        {
+            // 强制目标已失效，解除锁定
+            g_fTargetLockExpire[zombie] = 0.0;
+            g_iForcedTarget[zombie] = 0;
+        }
+    }
+
+    // 否则寻找最近的玩家目标
+    float entityPos[3], clientPos[3], dist = 0.0;
+    GetEntPropVector(zombie, Prop_Send, "m_vecOrigin", entityPos);
+
+    for (int i = 1; i <= MaxClients; i++)
+    {
+        if (IsClientConnected(i) && IsClientInGame(i) && IsPlayerAlive(i))
+        {
+            GetClientEyePosition(i, clientPos);
+            float distance = GetVectorDistance(entityPos, clientPos, false);
+            if (Han_ZombieCanSee(zombie, i, height))
+            {
+                if (dist == 0.0 || distance < dist)
+                {
+                    SetEntDataEnt2(zombie, gLeaderOffset, i);
+                    target = i;
+                    dist = distance;
+                }
+            }
+        }
+    }
+
+    // 如果没有任何目标，设置为自己
+    if (target == 0)
+    {
+        SetEntDataEnt2(zombie, gLeaderOffset, zombie);
+        target = zombie;
+    }
 }
+
 
 //能看见的目标射线
 stock Han_ZombieCanSee(zombie, target, float zombieheight = 55.0) 
@@ -1381,7 +1421,47 @@ public int Native_SafeDamageZombie(Handle plugin, int numParams)
 }
 
 
+public int Native_HanSetZombieTarget(Handle plugin, int numParams) 
+{
+    int zombie = GetNativeCell(1);
+    int target = GetNativeCell(2);
+    float locktime = view_as<float>(GetNativeCell(3));
 
+    if (!IsValidEntity(zombie) || !Han_ZombieIsAlive(zombie) || !IsValidClient(target) || !IsPlayerAlive(target))
+    {
+        return 0;
+    }
+
+    g_iForcedTarget[zombie] = target;
+
+    if (locktime <= 0.0)
+    {
+        g_fTargetLockExpire[zombie] = -1.0; // 永久锁定
+    }
+    else
+    {
+        g_fTargetLockExpire[zombie] = GetGameTime() + locktime;
+    }
+
+    return 1;
+}
+
+
+// 解除目标锁定
+public int Native_HanUnlockZombie(Handle plugin, int numParams) 
+{
+    int zombie = GetNativeCell(1);
+
+    if (!IsValidEntity(zombie))
+    {
+        return 0;
+    }
+
+    g_fTargetLockExpire[zombie] = 0.0; // 解锁
+    g_iForcedTarget[zombie] = 0;
+
+    return 1;
+}
 
 
 

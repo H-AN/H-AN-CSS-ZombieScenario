@@ -1,4 +1,4 @@
-#define VERSION "2.0.1"
+#define VERSION "2.1.0"
 #define MAXSPAWNS 256
 bool g_bZombieConfigReady = false;
 int offsCollision; 
@@ -54,9 +54,10 @@ enum struct ZombieStage
     char name[64];
     int killRequired;
     int healthBoost;
-    char zombies[128];   // 可选僵尸名称，逗号分隔
+    char zombies[512];   // 可选僵尸名称，逗号分隔
     int maxszombiecount;   // 此关最大特殊丧尸生成数量
-    char specialzombies[128];   // 可选特殊僵尸名称，逗号分隔
+    char specialzombies[512];   // 可选特殊僵尸名称，逗号分隔
+    char CustomZombies[512]; // 自定义丧尸额外生成
     char storyline[256]; // 剧情描述
 }
 
@@ -66,26 +67,27 @@ int g_CurrentStage = 0;
 
 int g_ZombiesKilled;
 
+
 enum struct ScenarioConfig
 {
-    bool enableplugins;
-    int maxZombieSpawn;
-    bool allowBuy;
-    char skybox[64];
-    char backgroundMusic[PLATFORM_MAX_PATH];
-    char lightStyle[4];
-    float playerrebornsec; 
-    float playerspawnprotect; 
-    float ZombieSpawnTime;
-    int killmoney;
-    int Maxmoney;
-    bool ShowPrintDamage;
-    bool WinEndRound;
+    ConVar enableplugins;
+    ConVar maxZombieSpawn;
+    ConVar allowBuy;
+    ConVar skybox;
+    ConVar backgroundMusic;
+    ConVar lightStyle;
+    ConVar playerrebornsec; 
+    ConVar playerspawnprotect; 
+    ConVar ZombieSpawnTime;
+    ConVar killmoney;
+    ConVar Maxmoney;
+    ConVar ShowPrintDamage;
+    ConVar WinEndRound;
+    ConVar EnableKillIcon;
 }
 
 ScenarioConfig g_ScenarioConfig;
 
-bool Isenable = true;
 
 enum struct VoxSystemConfig
 {
@@ -162,6 +164,14 @@ GlobalForward g_ForwardZombieCreated;  // 丧尸创建
 GlobalForward g_ForwardZombieDeath;    // 丧尸死亡
 GlobalForward g_ForwardZombieHurt;     // 丧尸被攻击
 GlobalForward g_ForwardZombieAttack;   // 丧尸攻击玩家
+
+GlobalForward g_ForwardGameStart;   // 游戏开始
+GlobalForward g_ForwardGameEnd;   // 游戏结束
+GlobalForward g_ForwardHumanWin;   //玩家胜利
+GlobalForward g_ForwardZombieWin;   //玩家失败
+
+int g_iForcedTarget[2048]; 
+float g_fTargetLockExpire[2048];
 
 MapChangeCleanup() 
 {

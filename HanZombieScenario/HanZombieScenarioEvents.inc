@@ -14,7 +14,10 @@ public Hook_PostThinkPost(client)
     if(!IsValidClient(client))
         return;
 
-    bool CanBuy = g_ScenarioConfig.allowBuy;
+    if (!GetConVarBool(g_ScenarioConfig.enableplugins))
+        return;
+
+    bool CanBuy = GetConVarBool(g_ScenarioConfig.allowBuy);
     if(!CanBuy)
         return;
 
@@ -23,6 +26,8 @@ public Hook_PostThinkPost(client)
 
 public Action TakeDamageHook(int victim, int &attacker, int &inflictor, float &damage, int &damagetype) //设置CT与T无法互相伤害
 {
+    if (!GetConVarBool(g_ScenarioConfig.enableplugins))
+        return Plugin_Continue;
     // 基础验证
     if (attacker <= 0 || attacker > MaxClients || !IsClientInGame(attacker) || !IsPlayerAlive(attacker))
         return Plugin_Continue;
@@ -87,6 +92,8 @@ UnHookEvents()
 	UnhookEvent("hostage_killed", OnHostageKilled, EventHookMode_Pre);
 
     UnhookEvent("smokegrenade_detonate", OnSmokeDetonate);
+
+    RemoveCommandListener(Cmd_BuyHook, "buy");
 
 }
 
@@ -174,7 +181,7 @@ public Action RoundFreezeEnd(Handle event, const String:name[], bool dontBroadca
         }
     }
 
-    float SpawnTime = g_ScenarioConfig.ZombieSpawnTime;
+    float SpawnTime = GetConVarFloat(g_ScenarioConfig.ZombieSpawnTime);
 
     if (IsValidHandle(FreezeEndCreateZ))
     {
@@ -230,6 +237,7 @@ public Action Timer_ToPlayTwentysVox(Handle timer)
 public Action Timer_ToCreateZombie(Handle timer)
 {
     GameStart = true;
+    IsGameStart();
     PlayRoundVox(g_VoxSystemConfig.ZombieComeingVox);
     int random = GetRandomInt(0, 6)
     switch(random)
@@ -257,7 +265,8 @@ public Action Timer_ToCreateZombie(Handle timer)
 void SpawnRoundZombie()
 {
     int ZombieCount = 0;
-    int maxZombies = g_ScenarioConfig.maxZombieSpawn;
+    //int maxZombies = g_ScenarioConfig.maxZombieSpawn;
+    int maxZombies = GetConVarInt(g_ScenarioConfig.maxZombieSpawn);
 
     char zombieList[64][64];
     int zombieCount = ExplodeString(g_Stages[g_CurrentStage].zombies, ",", zombieList, sizeof(zombieList), sizeof(zombieList[]));
@@ -293,7 +302,43 @@ void SpawnRoundZombie()
             SZombieCount++;
         }
     }
+
+    // 额外生成特定数量的自定义丧尸
+    if (g_Stages[g_CurrentStage].CustomZombies[0] != '\0')
+    {
+        SpawnCustomZombies(g_Stages[g_CurrentStage].CustomZombies);
+    }
+
 }
+
+
+void SpawnCustomZombies(const char[] configStr)
+{
+    char entries[32][64];
+    int count = ExplodeString(configStr, ",", entries, sizeof(entries), sizeof(entries[]));
+
+    for (int i = 0; i < count; i++)
+    {
+        char pair[2][64];
+        if (ExplodeString(entries[i], ":", pair, sizeof(pair), sizeof(pair[])) != 2)
+        {
+            PrintToServer("[ZombieScenario] customzombies 格式错误：%s", entries[i]);
+            continue;
+        }
+
+        char zombieName[64];
+        int zombieCount;
+
+        strcopy(zombieName, sizeof(zombieName), pair[0]);
+        zombieCount = StringToInt(pair[1]);
+
+        for (int j = 0; j < zombieCount; j++)
+        {
+            CreateZombie(zombieName);
+        }
+    }
+}
+
 
 void RebornZombie()
 {
@@ -356,7 +401,8 @@ public Action SpawnProtect(Handle timer, any client)
 
     if(IsClientConnected(client) && IsClientInGame(client))
     {
-        float RemoveprotectTime = g_ScenarioConfig.playerspawnprotect;
+        //float RemoveprotectTime = g_ScenarioConfig.playerspawnprotect;
+        float RemoveprotectTime = GetConVarFloat(g_ScenarioConfig.playerspawnprotect);
         CPrintToChat(client,"{green}[华仔]你拥有 {red}%1.f {green}秒的重生保护 !!", RemoveprotectTime);
         SetEntProp(client, Prop_Data, "m_takedamage", 0, 1);
         SetEntityRenderColor(client, 0, 0, 255, 125);
@@ -380,6 +426,7 @@ public Action RemoveSpawnProtect(Handle timer, any client)
 }
 public Action RoundEnd(Handle event, const String:name[], bool dontBroadcast)
 {
+    KillAllZombie();
     GameStart = false;
     if (tHUD != INVALID_HANDLE)
     {
@@ -423,11 +470,12 @@ void KillAllZombie()
 }
 
 
+
 public Action PlayerDeath(Handle event, const String:name[], bool dontBroadcast)
 {
     int client = GetClientOfUserId(GetEventInt(event, "userid"));
 
-    if(!IsValidClient(client))
+    if(!IsValidClient(client) || client <= 0)
         return Plugin_Continue;
 
     CreateTimer(1.0, Timer_CheckZombieWin, _, TIMER_FLAG_NO_MAPCHANGE);
@@ -479,7 +527,7 @@ StartRespawnTimer(client)
     if(IsFakeClient(client))
         return;
 
-    float respawn = g_ScenarioConfig.playerrebornsec;
+    float respawn = GetConVarFloat(g_ScenarioConfig.playerrebornsec);
     if (!respawn)
     {
         return;
@@ -523,7 +571,10 @@ public Action HumanRespawn(Handle timer, any client)
     
     ReSpawn[client] = INVALID_HANDLE;
     
-    CS_RespawnPlayer(client);
+    if (team == CS_TEAM_T || team == CS_TEAM_CT)
+    {
+        CS_RespawnPlayer(client);
+    }
     
     return Plugin_Continue;
 }
@@ -539,9 +590,10 @@ CheckHumansWin()
         g_ZombiesKilled = 0;
         g_CurrentStage++;
         KillAllZombie();
+        IsHumanWin();
         PlayRoundVox(g_VoxSystemConfig.HumanWinsVox);
         PlayRoundVox(g_VoxSystemConfig.WinsBgmVox);
-        if(g_ScenarioConfig.WinEndRound)
+        if(GetConVarBool(g_ScenarioConfig.WinEndRound))
         {
             TerminateRound(5.0, CSRoundEnd_CTWin);
         }
@@ -561,23 +613,26 @@ CheckHumansWin()
 
 void DontEndRound(float Time)
 {
-    if(!g_ScenarioConfig.WinEndRound)
+    if(!GetConVarBool(g_ScenarioConfig.WinEndRound))
     {
+        PrintToChatAll("DontEndRound");
         GameStart = false;
         CreateTimer(Time, CreateFakeNewRound, TIMER_FLAG_NO_MAPCHANGE);
+        IsGameEnd();
     }
 }
 
 public Action CreateFakeNewRound(Handle timer)
 {
-    if(g_ScenarioConfig.WinEndRound)
+    if(GetConVarBool(g_ScenarioConfig.WinEndRound))
         return Plugin_Stop;
+
 
     IsCountDown = false;
 
     CleanupInvalidZombies();
     g_ZombiesKilled = 0;
-    float SpawnTime = g_ScenarioConfig.ZombieSpawnTime;
+    float SpawnTime = GetConVarFloat(g_ScenarioConfig.ZombieSpawnTime);
     if (IsValidHandle(FreezeEndCreateZ))
     {
         CloseHandle(FreezeEndCreateZ);
@@ -630,8 +685,16 @@ public Action Timer_CheckZombieWin(Handle timer)
         PlayRoundVox(g_VoxSystemConfig.ZombieWinsVox);
         PlayRoundVox(g_VoxSystemConfig.lostBgmVox);
         KillAllZombie();
+        IsZombieWin();
         TerminateRound(5.0, CSRoundEnd_TerroristWin);
         GameStart = false;
+        IsGameEnd();
+
+        if(IsValidHandle(FreezeEndCreateZ))
+        {
+            CloseHandle(FreezeEndCreateZ)
+            FreezeEndCreateZ = INVALID_HANDLE;
+        }
     }
     return Plugin_Stop;
 }

@@ -17,6 +17,33 @@ void LoadZombieStages()
         return;
     }
 
+    char mapname[64];
+    GetCurrentMap(mapname, sizeof(mapname));
+
+    char mapConfigPath[PLATFORM_MAX_PATH];
+    BuildPath(Path_SM, mapConfigPath, sizeof(mapConfigPath), "configs/HanZombieScenario/%s/HanZombieScenarioStage.cfg", mapname);
+
+    if (FileExists(mapConfigPath))
+    {
+        // 若存在地图专属配置，优先读取
+        KeyValues kvMap = new KeyValues("Stage");
+
+        if (FileToKeyValues(kvMap, mapConfigPath))
+        {
+            delete kv; // 删除默认配置
+            kv = kvMap;
+
+            PrintToServer("[ZombieScenario] 载入地图专属配置：%s", mapConfigPath);
+        }
+        else
+        {
+            delete kvMap;
+            PrintToServer("[ZombieScenario] 地图专属配置读取失败，使用默认配置。");
+        }
+    }
+
+
+
     KvGotoFirstSubKey(kv);
     int index = 0;
 
@@ -33,6 +60,7 @@ void LoadZombieStages()
         stage.maxszombiecount = KvGetNum(kv, "maxszombiecount", 0);
         KvGetString(kv, "specialzombie", stage.specialzombies, sizeof(stage.specialzombies));
         KvGetString(kv, "storyline", stage.storyline, sizeof(stage.storyline));
+        KvGetString(kv, "customzombies", stage.CustomZombies, sizeof(stage.CustomZombies));     
 
         g_Stages[index++] = stage;
     } while (KvGotoNextKey(kv));
@@ -58,6 +86,7 @@ void WriteDefaultZombieStageConfig(const char[] path)
     WriteFileLine(file, "// maxszombiecount:  本关特殊丧尸额外生成数量");
     WriteFileLine(file, "// specialzombie:    本关卡可生成的特殊丧尸丧尸类型名称（多个用英文逗号分隔，对应 ZombieConfig 中的配置项）");
     WriteFileLine(file, "// storyline:        本关卡的剧情提示，可用于显示在 HUD 或聊天中");
+    WriteFileLine(file, "// customzombies:    (可选) 填写特殊丧尸额外生成 丧尸1:数量,丧尸2:数量 将额外生成");
     WriteFileLine(file, "");
     WriteFileLine(file, "\"Stage\"");
     WriteFileLine(file, "{");
