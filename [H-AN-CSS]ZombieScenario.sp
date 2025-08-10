@@ -73,7 +73,7 @@ public void OnMapStart()
     if (!GetConVarBool(g_ScenarioConfig.enableplugins))
     {
         ServerCommand("mp_ignore_round_win_conditions 0");
-		return;
+        return;
     }
 
     LoadScenarioConfig();
@@ -602,6 +602,12 @@ public void ZombieThink(int zombie)
 
     if (!Han_ZombieIsAlive(zombie))
     {
+        return;
+    }
+
+    if(zombiestop)
+    {
+        SetEntDataEnt2(zombie, gLeaderOffset, zombie);
         return;
     }
 
@@ -1463,7 +1469,6 @@ public int Native_HanUnlockZombie(Handle plugin, int numParams)
 
     return 1;
 }
-
 
 
 

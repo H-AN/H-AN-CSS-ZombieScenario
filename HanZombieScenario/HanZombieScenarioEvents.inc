@@ -58,6 +58,7 @@ HookEvents()
     HookEvent("player_spawn", PlayerSpawn);
     HookEvent("player_death", PlayerDeath);
 
+
     HookEvent("player_team", PlayerTeam_Pre, EventHookMode_Pre);
     HookEvent("player_team", PlayerTeam_Post, EventHookMode_Post);
 
@@ -96,6 +97,8 @@ UnHookEvents()
     RemoveCommandListener(Cmd_BuyHook, "buy");
 
 }
+
+
 
 void ClearDisconnect(int client)
 {
@@ -518,64 +521,69 @@ public Action Timer_ReBornBot(Handle timer, any client)
 
 StartRespawnTimer(client)
 {
-    if(!IsValidClient(client))
-        return;
-
-    if(IsPlayerAlive(client))
-        return;
-    
-    if(IsFakeClient(client))
+    if (!IsValidClient(client) || IsPlayerAlive(client) || IsFakeClient(client))
         return;
 
     float respawn = GetConVarFloat(g_ScenarioConfig.playerrebornsec);
-    if (!respawn)
+    if (respawn < 0.0)
+    return;
+
+    if (respawn == 0.0)
     {
+        CreateTimer(0.1, Timer_InstantRespawn, client);
         return;
     }
     
     if (ReSpawn[client] != INVALID_HANDLE)
     {
-        CloseHandle(ReSpawn[client]);
+        KillTimer(ReSpawn[client]);
+        ReSpawn[client] = INVALID_HANDLE;
     }
     
+    RespawnTime[client] = RoundToZero(respawn);
+
     PrintCenterText(client, "你已死亡 %i 秒后重生", RoundToZero(respawn));
    
-    RespawnTime[client] = RoundToZero(respawn);
     ReSpawn[client] = CreateTimer(1.0, HumanRespawn, client, TIMER_REPEAT);
+}
+
+public Action Timer_InstantRespawn(Handle timer, any client) //配置填写 0.0 复活时间 直接延迟 0.1秒复活 
+{
+    if (IsValidClient(client) && !IsPlayerAlive(client))
+    {
+        CS_RespawnPlayer(client);
+    }
+    return Plugin_Stop;
 }
 
 public Action HumanRespawn(Handle timer, any client)
 {
-    if(IsFakeClient(client))
-        return Plugin_Continue;
-
-    if (!IsValidClient(client) || IsPlayerAlive(client))
+    if (!IsValidClient(client) || IsFakeClient(client) || IsPlayerAlive(client))
     {
         ReSpawn[client] = INVALID_HANDLE;
-        return Plugin_Continue;
+        return Plugin_Stop; // 停止计时器
     }
+
     int team = GetClientTeam(client);
     if (team == CS_TEAM_T || team == CS_TEAM_CT)
     {
         RespawnTime[client]--;
     }
-    
+
     int timeremaining = (RespawnTime[client] < 0) ? 0 : RespawnTime[client];
-    
     PrintCenterText(client, "你已死亡 %i 秒后重生", timeremaining);
-    
-    if (RespawnTime[client] > 0)
+
+    if (RespawnTime[client] <= 0)
     {
-        return Plugin_Continue;
+        if (team == CS_TEAM_T || team == CS_TEAM_CT)
+        {
+            CS_RespawnPlayer(client);
+        }
+
+        ReSpawn[client] = INVALID_HANDLE;
+        return Plugin_Stop; // 停止计时器
     }
-    
-    ReSpawn[client] = INVALID_HANDLE;
-    
-    if (team == CS_TEAM_T || team == CS_TEAM_CT)
-    {
-        CS_RespawnPlayer(client);
-    }
-    
+
     return Plugin_Continue;
 }
 

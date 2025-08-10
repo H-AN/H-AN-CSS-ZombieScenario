@@ -297,6 +297,8 @@ stock CreateFakeKil(int attacker)
         GetEntityClassname(WeaponIndex, ClassName, sizeof(ClassName)); 
         ReplaceString(ClassName, sizeof(ClassName), "weapon_", "", false); 
         SetEventInt(event, "userid", 0); // victim
+        //SetEventInt(event, "userid", GetClientUserId(attacker));
+
         SetEventInt(event, "attacker", GetClientUserId(attacker)); // attacker
         SetEventString(event, "weapon", ClassName); // weapon name
         FireEvent(event, false);
@@ -432,6 +434,37 @@ void CreateAdmianCommand()
 {
     RegAdminCmd("hzs_setday", Command_SetDay, ADMFLAG_GENERIC, "管理员设置关卡");
     RegAdminCmd("hzs_restgame", Command_RestGame, ADMFLAG_GENERIC, "管理员重置游戏");
+    RegAdminCmd("hzs_stopzombie", Command_StopZombie, ADMFLAG_GENERIC, "管理员停止丧尸");
+}
+
+public Action Command_StopZombie(int client, int argc)
+{
+    if (argc < 1)
+    {
+        ReplyToCommand(client, "用法: hzs_stopzombie <0/1>");
+        return Plugin_Handled;
+    }
+
+    char arg[8];
+    GetCmdArg(1, arg, sizeof(arg));
+
+    int state = StringToInt(arg);
+    if (state == 1)
+    {
+        zombiestop = true;
+        CPrintToChatAll("{red} 管理员已停止丧尸活动!");
+    }
+    else if (state == 0)
+    {
+        zombiestop = false;
+        CPrintToChatAll("{red} 管理员已恢复丧尸活动!");
+    }
+    else
+    {
+        ReplyToCommand(client, "无效参数, 请输入 0 或 1");
+    }
+
+    return Plugin_Handled;
 }
 
 public Action Command_RestGame(client, argc)
