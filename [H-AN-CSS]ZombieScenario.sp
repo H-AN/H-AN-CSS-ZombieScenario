@@ -47,7 +47,9 @@ public APLRes:AskPluginLoad2(Handle:myself, bool:late, String:error[], err_max)
     g_ForwardZombieWin = new GlobalForward("Han_OnZombieWin", ET_Ignore);
 
     CreateNative("Han_SetZombieTarget", Native_HanSetZombieTarget);
-    CreateNative("Han_UnlockZombie", Native_HanUnlockZombie)
+    CreateNative("Han_UnlockZombie", Native_HanUnlockZombie);
+
+    CreateNative("Han_SetCustomAnimationEx", Native_HanSetCustomAnimationEx);
 
     
     
@@ -75,6 +77,7 @@ public void OnMapStart()
         ServerCommand("mp_ignore_round_win_conditions 0");
         return;
     }
+    SafeRoundStart = false;
 
     LoadScenarioConfig();
 
@@ -649,9 +652,13 @@ public void ZombieThink(int zombie)
     int target = -1;
     Han_Think(zombie, target);
 
-    // 目标无效，跳过行为
-    if (target <= 0 || !IsClientInGame(target))
+    if(target == zombie)
         return;
+
+    // 目标无效，跳过行为
+    if (target <= 0 || !IsClientInGame(target)) //
+        return;
+
 
     float pos[3], targetPos[3];
     GetEntPropVector(zombie, Prop_Data, "m_vecOrigin", pos);
@@ -1070,8 +1077,6 @@ stock Han_ZombieDeath(zombie)
 		CreateTimer(time, kill, EntIndexToEntRef(zombie));
     }
 	
-
-
 }
 
 
@@ -1092,7 +1097,7 @@ stock void Han_Think(int zombie, int &target, float height = 55.0)
     if (g_fTargetLockExpire[zombie] < 0.0 || g_fTargetLockExpire[zombie] > gameTime)
     {
         int locked = g_iForcedTarget[zombie];
-        if (IsValidClient(locked) && IsPlayerAlive(locked))
+        if (GetEntProp(locked, Prop_Data, "m_iHealth") > 0) //  IsValidClient(locked) && IsPlayerAlive(locked)
         {
             SetEntDataEnt2(zombie, gLeaderOffset, locked);
             target = locked;
@@ -1177,19 +1182,20 @@ public bool tracerayfilternotdefault(entity, contentsMask, any data)
 public Action kill(Handle timer, any entityRef) 
 {
     int zombie = EntRefToEntIndex(entityRef);
+    if(!IsValidEntity(zombie) && zombie == INVALID_ENT_REFERENCE)
+        return Plugin_Stop;
+
     int zombie_tmp;
-	if(zombie != -1)
+    char tmp[32];
+    GetEntPropString(zombie, Prop_Data, "m_iName", tmp, sizeof(tmp));
+    zombie_tmp = StringToInt(tmp);
+	if(IsValidEntity(zombie) && zombie != INVALID_ENT_REFERENCE)
 	{
-		char tmp[32]; float Pos[3], Angle[3];
-		GetEntPropString(zombie, Prop_Data, "m_iName", tmp, sizeof(tmp));
-		GetEntPropVector(zombie, Prop_Send, "m_vecOrigin", Pos);
-		GetEntPropVector(zombie, Prop_Send, "m_angRotation", Angle);
-		zombie_tmp = StringToInt(tmp);
 		SetEntityMoveType(zombie, MOVETYPE_VPHYSICS);
 		AcceptEntityInput(zombie, "Kill");
         RebornZombie();
 	}
-    if(zombie_tmp != -1)
+    if(IsValidEntity(zombie_tmp) && zombie_tmp != INVALID_ENT_REFERENCE)
     {
         AcceptEntityInput(zombie_tmp, "Kill");
     }
@@ -1375,6 +1381,25 @@ public int Native_HanSetCustomAnimation(Handle plugin, int numParams)
     return 1; 
 }
 
+public int Native_HanSetCustomAnimationEx(Handle plugin, int numParams) 
+{
+    int zombie = GetNativeCell(1); 
+
+    float now = GetEngineTime();
+
+    char anim[64];
+    GetNativeString(2, anim, sizeof(anim)); 
+    
+    float duration = view_as<float>(GetNativeCell(3));
+    
+    Han_SetAnimation(zombie, anim, duration);
+    g_ZombieState[zombie].IsCustomAnim = true;
+    
+    g_ZombieState[zombie].CustomAnimEndTime = now + duration;
+    
+    return 1; 
+}
+
 
 public any Native_HanIsZombie(Handle plugin, int numParams)
 {
@@ -1434,7 +1459,12 @@ public int Native_HanSetZombieTarget(Handle plugin, int numParams)
     int target = GetNativeCell(2);
     float locktime = view_as<float>(GetNativeCell(3));
 
-    if (!IsValidEntity(zombie) || !Han_ZombieIsAlive(zombie) || !IsValidClient(target) || !IsPlayerAlive(target))
+    if (!IsValidEntity(zombie) || !Han_ZombieIsAlive(zombie) || !IsValidEntity(target)) // || !IsValidClient(target) || !IsPlayerAlive(target)
+    {
+        return 0;
+    }
+
+    if (GetEntProp(target, Prop_Data, "m_iHealth") <= 0) 
     {
         return 0;
     }

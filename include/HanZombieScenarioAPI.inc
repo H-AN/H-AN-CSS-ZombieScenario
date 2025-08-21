@@ -106,3 +106,12 @@ forward void Han_OnHumanWin();
  */
 forward void Han_OnZombieWin();
 
+/**
+ * 设置丧尸播放自定义动画（无视动画时间强制设置）
+ * @param zombie    丧尸实体索引
+ * @param anim      动画名称
+ * @param duration  动画持续时间（秒）
+ */
+
+native bool Han_SetCustomAnimationEx(int zombie, const char[] anim, float duration);
+
