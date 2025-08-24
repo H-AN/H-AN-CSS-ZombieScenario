@@ -1,4 +1,4 @@
-#define VERSION "2.1.3"
+#define VERSION "2.2.0"
 #define MAXSPAWNS 256
 bool g_bZombieConfigReady = false;
 int offsCollision; 
@@ -176,6 +176,8 @@ float g_fTargetLockExpire[2048];
 bool zombiestop;
 
 bool SafeRoundStart;
+
+StringMap g_DamageConfig;
 
 MapChangeCleanup() 
 {
