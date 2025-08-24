@@ -280,30 +280,47 @@ void ZombieDeathSolid(int zombie)
 // ============================================================================
 // >> 创建fake击杀事件
 // ============================================================================
-
 stock CreateFakeKil(int attacker)
 {
-    if(!IsValidClient(attacker))
+    if (!IsValidClient(attacker) || !IsClientInGame(attacker))
         return;
 
-    if(!GetConVarBool(g_ScenarioConfig.EnableKillIcon))
+    if (!GetConVarBool(g_ScenarioConfig.EnableKillIcon))
         return;
 
-    Handle event = CreateEvent("player_death");
-    if (event != INVALID_HANDLE)
+    Event hEvent = CreateEvent("player_death", true);
+    if (hEvent == null)
+        return;
+
+    char ClassName[30];
+    int WeaponIndex = GetEntPropEnt(attacker, Prop_Send, "m_hActiveWeapon");
+    if (WeaponIndex > 0 && IsValidEdict(WeaponIndex))
     {
-        char ClassName[30];
-        int WeaponIndex = GetEntPropEnt(attacker, Prop_Send, "m_hActiveWeapon");
-        GetEntityClassname(WeaponIndex, ClassName, sizeof(ClassName)); 
-        ReplaceString(ClassName, sizeof(ClassName), "weapon_", "", false); 
-        SetEventInt(event, "userid", 0); // victim
-        //SetEventInt(event, "userid", GetClientUserId(attacker));
+        GetEntityClassname(WeaponIndex, ClassName, sizeof(ClassName));
+        ReplaceString(ClassName, sizeof(ClassName), "weapon_", "", false);
+    }
+    else
+    {
+        strcopy(ClassName, sizeof(ClassName), "knife"); // fallback
+    }
 
-        SetEventInt(event, "attacker", GetClientUserId(attacker)); // attacker
-        SetEventString(event, "weapon", ClassName); // weapon name
-        FireEvent(event, false);
-    } 
+    hEvent.SetInt("userid", 0); // victim = 0
+    hEvent.SetInt("attacker", GetClientUserId(attacker));
+    hEvent.SetString("weapon", ClassName);
+
+    // 只发送给自己(攻击者)
+    // hEvent.FireToClient(attacker);
+
+    // 遍历所有玩家 发送给所有特定玩家 
+    for (int i = 1; i <= MaxClients; i++)
+    {
+        if (IsClientInGame(i) && !IsFakeClient(i)) //只发送给真人玩家 和在游戏中的 客户端
+            hEvent.FireToClient(i); // 只发送给特定客户端 不经过其他hook
+    }
+
+    hEvent.Close(); //但是必须手动关闭 事件 防止内存泄露
 }
+
 
 // ============================================================================
 // >> 清除状态
