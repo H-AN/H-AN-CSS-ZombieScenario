@@ -15,6 +15,8 @@
 #include "HanZombieScenario/HanZombieScenarioAmbient"
 #include "HanZombieScenario/HanZombieScenarioVoxSystem"
 #include "HanZombieScenario/HanZombieScenarioGrenadeSystem"
+#include "HanZombieScenario/HanZombieScenarioDamageConfig"
+
 
 
 public Plugin:myinfo =
@@ -91,6 +93,7 @@ public void OnMapStart()
     LoadScenarioVoxConfig();
     ChangeMapLightAndSkyBox();
     LoadScenarioGrenadeConfig();
+    LoadScenarioDamageConfig();
 
     g_ZombieNameMap = new StringMap();
 
@@ -474,6 +477,18 @@ public Action ZombieDamageHook(int zombie, int &attacker, int &inflictor, float 
             }
         }
     }
+
+    if(IsClientInGame(attacker) && IsPlayerAlive(attacker))
+    {
+        int weaponEnt = GetEntPropEnt(attacker, Prop_Send, "m_hActiveWeapon");
+        char WeaponName[256];
+		if(weaponEnt != -1) 
+        {
+            GetEdictClassname(weaponEnt, WeaponName, 256);
+            damage = ApplyScenarioDamageModifier(WeaponName, damage);
+        }
+    }
+
 
     char anim[64];
     float animTime;
