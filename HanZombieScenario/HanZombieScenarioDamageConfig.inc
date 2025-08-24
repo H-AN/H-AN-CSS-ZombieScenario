@@ -6,7 +6,7 @@ void LoadScenarioDamageConfig()
     }
     g_DamageConfig = new StringMap();
 
-    KeyValues kv = new KeyValues("ScenarioVoxConfig");
+    KeyValues kv = new KeyValues("ScenarioDmgConfig");
 
     char path[PLATFORM_MAX_PATH];
     BuildPath(Path_SM, path, sizeof(path), "configs/HanZombieScenario/HanZombieScenarioDamageConfig.cfg");
@@ -64,7 +64,7 @@ void WriteDefaultScenarioDmgConfig(const char[] path)
     WriteFileLine(file, "// 例如: \"weapon_ak47\" \"+40.0\"  表示 AK47 额外增加40伤害");
     WriteFileLine(file, "// =====================================================");
     WriteFileLine(file, "");
-    WriteFileLine(file, "\"ScenarioVoxConfig\"");
+    WriteFileLine(file, "\"ScenarioDmgConfig\"");
     WriteFileLine(file, "{");
     WriteFileLine(file, "    \"weapon_ak47\"    \"+40.0\"");
     WriteFileLine(file, "    \"weapon_m4a1\"    \"-10.0\"");
