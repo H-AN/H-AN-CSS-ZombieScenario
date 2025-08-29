@@ -386,7 +386,7 @@ public Action PlayerSpawn(Handle event, const String:name[], bool dontBroadcast)
         return Plugin_Continue;
     
     int team = GetClientTeam(client);
-    if (team != CS_TEAM_T || team != CS_TEAM_CT)
+    if (team != CS_TEAM_T && team != CS_TEAM_CT)
     {
         return Plugin_Continue;
     }
@@ -845,4 +845,5 @@ public Action MsgHook_HintText(UserMsg msg_id, Handle pb, const int[] players, i
     }
 
     return Plugin_Continue;
+
 }
