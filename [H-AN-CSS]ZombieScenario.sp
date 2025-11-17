@@ -74,16 +74,12 @@ public void OnPluginStart()
 
 public void OnMapStart()
 {
-    if (!GetConVarBool(g_ScenarioConfig.enableplugins))
-    {
-        ServerCommand("mp_ignore_round_win_conditions 0");
-        return;
-    }
+    
     SafeRoundStart = false;
 
     LoadScenarioConfig();
 
-    UpdateCavr();
+    
 
     MapChangeCleanup();
 
@@ -91,7 +87,7 @@ public void OnMapStart()
     LoadZombieConfig();
     LoadZombieStages();
     LoadScenarioVoxConfig();
-    ChangeMapLightAndSkyBox();
+    
     LoadScenarioGrenadeConfig();
     LoadScenarioDamageConfig();
 
@@ -105,7 +101,14 @@ public void OnMapStart()
 
     CleanupInvalidZombies();
 
-    
+    if (!GetConVarBool(g_ScenarioConfig.enableplugins))
+    {
+        ServerCommand("mp_ignore_round_win_conditions 0");
+        return;
+    }
+
+    UpdateCavr();
+    ChangeMapLightAndSkyBox();
 
 }
 
