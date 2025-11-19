@@ -16,6 +16,7 @@
 #include "HanZombieScenario/HanZombieScenarioVoxSystem"
 #include "HanZombieScenario/HanZombieScenarioGrenadeSystem"
 #include "HanZombieScenario/HanZombieScenarioDamageConfig"
+#include "HanZombieScenario/HanZombieScenarioTranslation"
 
 
 
@@ -61,6 +62,7 @@ public APLRes:AskPluginLoad2(Handle:myself, bool:late, String:error[], err_max)
 
 public void OnPluginStart()
 {
+    LoadTranslations("HanZombieScenario.phrases.txt");
     HookEvents();
     HookUserMgs();
     InitScenarioCvars();
@@ -1004,7 +1006,7 @@ bool Han_HurtZombie(zombie, attacker, damage = 0)
     
     if(GetConVarBool(g_ScenarioConfig.ShowPrintDamage))
     {
-        PrintCenterText(attacker, "造成 %i 伤害", damage);
+        HZS_PrintCenterText(attacker, "Damage info", damage);
     }
 
     FixMoney(attacker);

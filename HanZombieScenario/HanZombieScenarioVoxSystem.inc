@@ -236,6 +236,6 @@ void PlayRoundVox(const char[] input)
 
 public Action Timer_ShowCountdownHint(Handle timer, int remainingSeconds)
 {
-    PrintCenterTextAll("%d 秒后丧尸开始行动!!", remainingSeconds);
+    HZS_PrintCenterTextAll("Round remaining", remainingSeconds);
     return Plugin_Stop;
 }

@@ -32,12 +32,11 @@ UpdateHUD(clients[], numClients)
             g_ZombieNameMap.GetString(key, name, sizeof(name))
 
             int hp = GetEntProp(target, Prop_Data, "m_iHealth");
-            PrintHintText(clients[x], "%s\n第 %d/%d 关\n需要击杀：%d/%d\n存活人类：%d\n丧尸数量：%d\n目标: %s 剩余血量: %d", g_Stages[g_CurrentStage].name, g_CurrentStage + 1, g_StageCount, g_ZombiesKilled, g_Stages[g_CurrentStage].killRequired, liveHumans, liveZombies, name, hp);
-            
+            HZS_HudHint(clients[x], "HUD target", g_Stages[g_CurrentStage].name, g_CurrentStage + 1, g_StageCount, g_ZombiesKilled, g_Stages[g_CurrentStage].killRequired, liveHumans, liveZombies, name, hp);
         }
         else
-        {
-            PrintHintText(clients[x], "%s\n第 %d/%d 关\n需要击杀：%d/%d\n存活人类：%d\n丧尸数量：%d\n%s", g_Stages[g_CurrentStage].name, g_CurrentStage + 1, g_StageCount, g_ZombiesKilled, g_Stages[g_CurrentStage].killRequired, liveHumans, liveZombies, g_Stages[g_CurrentStage].storyline);
+        {                                                            
+            HZS_HudHint(clients[x], "HUD", g_Stages[g_CurrentStage].name, g_CurrentStage + 1, g_StageCount, g_ZombiesKilled, g_Stages[g_CurrentStage].killRequired, liveHumans, liveZombies, g_Stages[g_CurrentStage].storyline);
         }
     }
 }

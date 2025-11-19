@@ -1,4 +1,4 @@
-#define VERSION "2.2.1"
+#define VERSION "2.3.0"
 #define MAXSPAWNS 256
 bool g_bZombieConfigReady = false;
 int offsCollision; 
@@ -189,5 +189,4 @@ MapChangeCleanup()
     tAmbience = INVALID_HANDLE; 
     FreezeEndCreateZ = INVALID_HANDLE;
     FreezeEndTwentysVox = INVALID_HANDLE;
-
 }

@@ -1,10 +1,3 @@
-/*
-void ChangeMapLightAndSkyBox()
-{
-    SetLightStyle(0, g_ScenarioConfig.lightStyle);
-    SetConVarString(FindConVar("sv_skyname"), g_ScenarioConfig.skybox, true);
-}
-*/
 
 void ChangeMapLightAndSkyBox()
 {
@@ -16,6 +9,7 @@ void ChangeMapLightAndSkyBox()
     GetConVarString(g_ScenarioConfig.skybox, skybox, sizeof(skybox));
     Handle sv_skyname = FindConVar("sv_skyname");
     SetConVarString(sv_skyname, skybox, true);
+
 }
 
 

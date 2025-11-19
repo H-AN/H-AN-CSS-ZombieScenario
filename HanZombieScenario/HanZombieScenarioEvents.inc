@@ -173,6 +173,11 @@ public Action CheckTeam(Handle timer, any index)
 
 public Action RoundFreezeEnd(Handle event, const String:name[], bool dontBroadcast)
 {
+    if(!SafeRoundStart)
+    return Plugin_Continue;
+
+    SafeRoundStart = false;
+
     RemoveObjectives();
     CleanupInvalidZombies();
     g_ZombiesKilled = 0;
@@ -231,7 +236,8 @@ public Action Timer_ToPlayTwentysVox(Handle timer)
 	{
 		if(IsClientConnected(i) && IsClientInGame(i) && IsPlayerAlive(i))
 		{
-            PrintCenterText(i,"20 秒倒计时后丧尸开始行动!!");
+            //PrintCenterText(i,"20 秒倒计时后丧尸开始行动!!");
+            HZS_PrintCenterText(i,"Remaining");
         }
     }
     return Plugin_Stop;
@@ -246,19 +252,19 @@ public Action Timer_ToCreateZombie(Handle timer)
     switch(random)
     {
         case 0:
-        PrintCenterTextAll("击溃它们!!");
+        HZS_PrintCenterTextAll("Start info1");
         case 1:
-        PrintCenterTextAll("存活下去!!");
+        HZS_PrintCenterTextAll("Start info2");
         case 2:
-        PrintCenterTextAll("逃出这里!!");
+        HZS_PrintCenterTextAll("Start info3");
         case 3:
-        PrintCenterTextAll("直面恐惧!!");
+        HZS_PrintCenterTextAll("Start info4");
         case 4:
-        PrintCenterTextAll("寻找有利地势!!");
+        HZS_PrintCenterTextAll("Start info5");
         case 5:
-        PrintCenterTextAll("进攻就是最好的防守!!");
+        HZS_PrintCenterTextAll("Start info6");
         default:
-        PrintCenterTextAll("击溃它们!!");
+        HZS_PrintCenterTextAll("Start info7");
     }
     
     SpawnRoundZombie();
@@ -365,6 +371,7 @@ void RebornZombie()
 public Action RoundStart(Handle event, const String:name[], bool dontBroadcast)  
 {
     IsCountDown = false;
+    SafeRoundStart = true;
     if (tHUD != INVALID_HANDLE)
     {
         CloseHandle(tHUD);
@@ -386,7 +393,7 @@ public Action PlayerSpawn(Handle event, const String:name[], bool dontBroadcast)
         return Plugin_Continue;
     
     int team = GetClientTeam(client);
-    if (team != CS_TEAM_T && team != CS_TEAM_CT)
+    if (team != CS_TEAM_T || team != CS_TEAM_CT)
     {
         return Plugin_Continue;
     }
@@ -542,7 +549,8 @@ StartRespawnTimer(client)
     
     RespawnTime[client] = RoundToZero(respawn);
 
-    PrintCenterText(client, "你已死亡 %i 秒后重生", RoundToZero(respawn));
+    //PrintCenterText(client, "你已死亡 %i 秒后重生", RoundToZero(respawn));
+    HZS_PrintCenterText(client, "Death countdown", RoundToZero(respawn));
    
     ReSpawn[client] = CreateTimer(1.0, HumanRespawn, client, TIMER_REPEAT);
 }
@@ -571,7 +579,8 @@ public Action HumanRespawn(Handle timer, any client)
     }
 
     int timeremaining = (RespawnTime[client] < 0) ? 0 : RespawnTime[client];
-    PrintCenterText(client, "你已死亡 %i 秒后重生", timeremaining);
+    //PrintCenterText(client, "你已死亡 %i 秒后重生", timeremaining);
+    HZS_PrintCenterText(client, "Death countdown", timeremaining);
 
     if (RespawnTime[client] <= 0)
     {
@@ -845,5 +854,4 @@ public Action MsgHook_HintText(UserMsg msg_id, Handle pb, const int[] players, i
     }
 
     return Plugin_Continue;
-
 }
