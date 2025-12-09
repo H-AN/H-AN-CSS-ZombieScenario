@@ -1,5 +1,7 @@
-<h1>🧟 HanZombieScenario 大灾变插件说明文档</h1>
+<h1>🧟 HanZombieScenario 大灾变插件说明文档</h1> 
 <p class="en">HanZombieScenario Plugin Documentation (Chinese & English)</p>
+
+[![ko-fi](https://ko-fi.com/img/githubbutton_sm.svg)](https://ko-fi.com/Z8Z31PY52N)
 
 <div class="section">
   <h2>插件介绍 / Introduction</h2>
