@@ -3,6 +3,14 @@
 
 [![ko-fi](https://ko-fi.com/img/githubbutton_sm.svg)](https://ko-fi.com/Z8Z31PY52N)
 
+<div style="display:flex; align-items:center; gap:6px; flex-wrap:wrap;">
+  <span>技术支持 / Powered by yumiai :</span>
+  <a href="https://yumi.chat:3000/">
+    <img src="https://yumi.chat:3000/logo.png" width="50">
+  </a>
+  <span>(最好的AI模型供应商 / Best AI model provider)</span>
+</div>
+
 <div class="section">
   <h2>插件介绍 / Introduction</h2>
   <p>本插件基于 <strong>SourceMod 1.12</strong> 开发，为 <strong>CS 起源 64 位新版本</strong> 提供 PvE 丧尸玩法。它通过将“人质实体”作为受击点，附加动画模型，模拟出高度拟真的 NPC 丧尸与怪物行为。</p>
