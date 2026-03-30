@@ -3,9 +3,6 @@
 
 [![ko-fi](https://ko-fi.com/img/githubbutton_sm.svg)](https://ko-fi.com/Z8Z31PY52N)
 
-<div style="display:flex; align-items:center; gap:6px; flex-wrap:wrap;">
-  <span>特别感谢 yumiai : <img src="https://github.com/user-attachments/assets/4c17066a-3f5a-431c-ad96-b20cbc25a7b4" width="50"></span>
-</div>
 
 <div class="section">
   <h2>插件介绍 / Introduction</h2>
