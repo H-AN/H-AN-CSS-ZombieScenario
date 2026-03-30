@@ -4,11 +4,7 @@
 [![ko-fi](https://ko-fi.com/img/githubbutton_sm.svg)](https://ko-fi.com/Z8Z31PY52N)
 
 <div style="display:flex; align-items:center; gap:6px; flex-wrap:wrap;">
-  <span>技术支持 / Powered by yumiai :</span>
-  <a href="https://yumi.chat:3000/">
-    <img src="https://yumi.chat:3000/logo.png" width="50">
-  </a>
-  <span>(最好的AI模型供应商 / Best AI model provider)</span>
+  <span>特别感谢 yumiai : <img src="https://github.com/user-attachments/assets/4c17066a-3f5a-431c-ad96-b20cbc25a7b4" width="50"></span>
 </div>
 
 <div class="section">
