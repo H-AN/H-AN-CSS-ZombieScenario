@@ -788,8 +788,9 @@ void ZombieAvoidOverlap(int Zombie)
             {
                 float fDirection[3];
                 MakeVectorFromPoints(otherOrigin, vZombiePosition, fDirection);
-                NormalizeVector(fDirection, fDirection);              
-                float fForce = -120.0; 
+                fDirection[2] = 0.0;     
+                NormalizeVector(fDirection, fDirection);
+                float fForce = -120.0;
                 ScaleVector(fDirection, fForce);
                 TeleportEntity(otherzombie, NULL_VECTOR, NULL_VECTOR, fDirection);
             }
