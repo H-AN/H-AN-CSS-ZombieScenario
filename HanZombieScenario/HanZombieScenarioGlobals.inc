@@ -1,4 +1,4 @@
-#define VERSION "2.3.0"
+#define VERSION "2.3.1"
 #define MAXSPAWNS 256
 bool g_bZombieConfigReady = false;
 int offsCollision; 
