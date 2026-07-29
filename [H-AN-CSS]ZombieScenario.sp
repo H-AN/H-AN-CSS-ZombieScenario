@@ -42,6 +42,7 @@ public APLRes:AskPluginLoad2(Handle:myself, bool:late, String:error[], err_max)
     g_ForwardZombieCreated = new GlobalForward("Han_OnZombieCreated", ET_Ignore, Param_Cell);
     g_ForwardZombieDeath = new GlobalForward("Han_OnZombieDeath", ET_Ignore, Param_Cell, Param_Cell);
     g_ForwardZombieHurt = new GlobalForward("Han_OnZombieHurt", ET_Ignore, Param_Cell, Param_Cell);
+    g_ForwardZombieDamagePre = new GlobalForward("Han_OnZombieDamagePre", ET_Ignore, Param_Cell, Param_Cell, Param_CellByRef);
     g_ForwardZombieAttack = new GlobalForward("Han_OnZombieAttack", ET_Ignore, Param_Cell, Param_Cell);
 
     g_ForwardGameStart = new GlobalForward("Han_OnGameStart", ET_Ignore);
@@ -990,7 +991,13 @@ bool Han_HurtZombie(zombie, attacker, damage = 0)
     Call_PushCell(zombie);
     Call_PushCell(attacker);
     Call_Finish();
-     
+
+    Call_StartForward(g_ForwardZombieDamagePre);
+    Call_PushCell(zombie);
+    Call_PushCell(attacker);
+    Call_PushCellRef(damage);
+    Call_Finish();
+
     int health = GetEntProp(zombie, Prop_Data, "m_iHealth") - damage;
     if(health < 0)
     {

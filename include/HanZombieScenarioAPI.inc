@@ -56,6 +56,13 @@ forward void Han_OnZombieDeath(int zombie, int killer);
  */
 forward void Han_OnZombieHurt(int zombie, int attacker);
 /**
+ * 丧尸扣血前事件，可修改最终整数伤害
+ * @param zombie     丧尸实体
+ * @param attacker   攻击者玩家
+ * @param damage     最终伤害值，可通过引用修改
+ */
+forward void Han_OnZombieDamagePre(int zombie, int attacker, int &damage);
+/**
  * 丧尸攻击事件
  * @param zombie    丧尸实体索引
  * @param victim      玩家客户端索引

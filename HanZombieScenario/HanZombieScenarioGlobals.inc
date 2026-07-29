@@ -1,4 +1,4 @@
-#define VERSION "2.3.1"
+#define VERSION "2.3.2"
 #define MAXSPAWNS 256
 bool g_bZombieConfigReady = false;
 int offsCollision; 
@@ -163,6 +163,7 @@ int g_iTargetZombie[MAXPLAYERS+1];
 GlobalForward g_ForwardZombieCreated;  // 丧尸创建
 GlobalForward g_ForwardZombieDeath;    // 丧尸死亡
 GlobalForward g_ForwardZombieHurt;     // 丧尸被攻击
+GlobalForward g_ForwardZombieDamagePre; // 丧尸扣血前，可修改伤害
 GlobalForward g_ForwardZombieAttack;   // 丧尸攻击玩家
 
 GlobalForward g_ForwardGameStart;   // 游戏开始

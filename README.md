@@ -95,6 +95,7 @@ Han_SafeDamageZombie(attacker, zombie, damage);
     <li><code>Han_OnZombieCreated</code> - 丧尸生成事件</li>
     <li><code>Han_OnZombieDeath</code> - 丧尸死亡事件</li>
     <li><code>Han_OnZombieHurt</code> - 丧尸被攻击事件</li>
+    <li><code>Han_OnZombieDamagePre</code> - 丧尸扣血前事件（可修改伤害）</li>
     <li><code>Han_OnZombieAttack</code> - 丧尸攻击玩家事件</li>
   </ul>
 
